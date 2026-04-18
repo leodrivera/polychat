@@ -44,12 +44,21 @@ Chat with **PDFs, CSVs, TXT files, websites, and YouTube videos** — powered by
 
 ## Architecture
 
-```
-Streamlit UI  ─┐
-               ├──► loaders/ ──► splitter ──► embeddings ──► vector store
-i18n/ ─────────┘                                                   │
-                                                                   ▼
-                                              RunnableWithMessageHistory ──► LLM
+```mermaid
+flowchart LR
+    UI[Streamlit UI]
+    i18n[i18n/]
+    loaders[loaders/]
+    splitter[splitter]
+    embeddings[embeddings]
+    vs[vector store]
+    chain[RunnableWithMessageHistory]
+    LLM[LLM]
+
+    UI --> loaders
+    i18n --> loaders
+    loaders --> splitter --> embeddings --> vs
+    vs --> chain --> LLM
 ```
 
 All RAG modules are pure, testable functions — the Streamlit app wires them together but contains no retrieval logic itself.
