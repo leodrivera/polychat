@@ -1,0 +1,52 @@
+{
+  "_meta": { "name": "English", "code": "en" },
+
+  "app.title": "RAG Retrieval Augmentation Generation",
+  "app.subtitle": "Chat with PDFs, CSVs, TXTs, websites, and YouTube videos.",
+
+  "sidebar.tab.files": "File Upload",
+  "sidebar.tab.models": "Model Selection",
+
+  "sidebar.source_type": "Select the source type",
+  "sidebar.source.pdf": "PDF",
+  "sidebar.source.csv": "CSV",
+  "sidebar.source.txt": "TXT",
+  "sidebar.source.site": "Website",
+  "sidebar.source.youtube": "YouTube",
+
+  "sidebar.upload.files": "Upload your files",
+  "sidebar.upload.site": "Website URL",
+  "sidebar.upload.youtube": "YouTube URL",
+
+  "sidebar.vector_store": "Vector store",
+  "sidebar.persist": "Persist index (keeps RAG after restart)",
+  "sidebar.button.init": "Initialize RAG",
+  "sidebar.button.clear": "Clear Conversation History",
+
+  "sidebar.language": "Language",
+  "sidebar.llm_provider": "LLM Provider",
+  "sidebar.model": "Model",
+  "sidebar.embeddings": "Embeddings",
+  "sidebar.embeddings.openai": "OpenAI (cloud)",
+  "sidebar.embeddings.huggingface_local": "HuggingFace (local, multilingual)",
+  "sidebar.temperature": "Temperature",
+
+  "chat.placeholder": "Send a message to PolyChat",
+  "chat.not_ready": "Load a source and click 'Initialize RAG' to begin.",
+  "chat.thinking": "Thinking…",
+
+  "status.ingesting": "Ingesting {kind}…",
+  "status.ready": "RAG is ready. Ask a question below.",
+  "status.cleared": "Conversation history cleared.",
+  "status.loaded_persisted": "Loaded a previously persisted index.",
+
+  "errors.no_transcript": "This video does not have a transcript available.",
+  "errors.video_unavailable": "This video is unavailable (private, deleted, or restricted).",
+  "errors.ip_blocked": "YouTube blocked this request. Try setting YT_PROXY_HTTP/HTTPS in .env.",
+  "errors.age_restricted": "This video is age-restricted and cannot be fetched without authentication.",
+  "errors.missing_api_key": "Missing API key for {provider}. Set it in .env.",
+  "errors.embeddings_changed": "Embeddings changed — please re-initialize the RAG.",
+  "errors.no_source": "Please provide at least one file or a URL before initializing.",
+  "errors.invalid_url": "That does not look like a valid {kind} URL.",
+  "errors.ollama_unreachable": "Cannot reach Ollama at {url}. Run `ollama serve`."
+}

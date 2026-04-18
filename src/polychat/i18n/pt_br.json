@@ -1,0 +1,52 @@
+{
+  "_meta": { "name": "Português (Brasil)", "code": "pt_br" },
+
+  "app.title": "RAG Retrieval Augmentation Generation",
+  "app.subtitle": "Converse com PDFs, CSVs, TXTs, sites e vídeos do YouTube.",
+
+  "sidebar.tab.files": "Upload de Arquivos",
+  "sidebar.tab.models": "Seleção de Modelos",
+
+  "sidebar.source_type": "Selecione o tipo de arquivo",
+  "sidebar.source.pdf": "Pdf",
+  "sidebar.source.csv": "Csv",
+  "sidebar.source.txt": "Txt",
+  "sidebar.source.site": "Site",
+  "sidebar.source.youtube": "Youtube",
+
+  "sidebar.upload.files": "Faça o upload dos seus arquivos",
+  "sidebar.upload.site": "URL do site",
+  "sidebar.upload.youtube": "URL do vídeo",
+
+  "sidebar.vector_store": "Base vetorial",
+  "sidebar.persist": "Persistir índice (mantém o RAG após reiniciar)",
+  "sidebar.button.init": "Inicializar RAG",
+  "sidebar.button.clear": "Apagar Histórico de Conversa",
+
+  "sidebar.language": "Idioma",
+  "sidebar.llm_provider": "Provedor LLM",
+  "sidebar.model": "Modelo",
+  "sidebar.embeddings": "Embeddings",
+  "sidebar.embeddings.openai": "OpenAI (nuvem)",
+  "sidebar.embeddings.huggingface_local": "HuggingFace (local, multilíngue)",
+  "sidebar.temperature": "Temperatura",
+
+  "chat.placeholder": "Envie uma mensagem para o PolyChat",
+  "chat.not_ready": "Carregue uma fonte e clique em 'Inicializar RAG' para começar.",
+  "chat.thinking": "Pensando…",
+
+  "status.ingesting": "Processando {kind}…",
+  "status.ready": "RAG pronto. Faça sua pergunta abaixo.",
+  "status.cleared": "Histórico de conversa apagado.",
+  "status.loaded_persisted": "Índice persistido anterior carregado.",
+
+  "errors.no_transcript": "Este vídeo não possui transcrição disponível.",
+  "errors.video_unavailable": "Este vídeo está indisponível (privado, removido ou restrito).",
+  "errors.ip_blocked": "O YouTube bloqueou a requisição. Configure YT_PROXY_HTTP/HTTPS no .env.",
+  "errors.age_restricted": "Este vídeo tem restrição de idade e não pode ser acessado sem autenticação.",
+  "errors.missing_api_key": "Chave de API ausente para {provider}. Defina no .env.",
+  "errors.embeddings_changed": "Embeddings alterados — reinicialize o RAG.",
+  "errors.no_source": "Forneça ao menos um arquivo ou URL antes de inicializar.",
+  "errors.invalid_url": "Isso não parece uma URL {kind} válida.",
+  "errors.ollama_unreachable": "Não foi possível acessar o Ollama em {url}. Execute `ollama serve`."
+}
