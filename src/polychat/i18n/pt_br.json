@@ -1,7 +1,7 @@
 {
   "_meta": { "name": "Português (Brasil)", "code": "pt_br" },
 
-  "app.title": "RAG Retrieval Augmentation Generation",
+  "app.title": "PolyChat — Converse com seus Documentos",
   "app.subtitle": "Converse com PDFs, CSVs, TXTs, sites e vídeos do YouTube.",
 
   "sidebar.tab.files": "Upload de Arquivos",

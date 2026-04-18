@@ -37,7 +37,6 @@ faiss_index/
 # OS
 .DS_Store
 Thumbs.db
-*Zone.Identifier
 
 # HuggingFace / Streamlit local caches inside the project
 .hf_cache/

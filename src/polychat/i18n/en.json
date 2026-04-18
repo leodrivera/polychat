@@ -1,7 +1,7 @@
 {
   "_meta": { "name": "English", "code": "en" },
 
-  "app.title": "RAG Retrieval Augmentation Generation",
+  "app.title": "PolyChat — Chat with Your Documents",
   "app.subtitle": "Chat with PDFs, CSVs, TXTs, websites, and YouTube videos.",
 
   "sidebar.tab.files": "File Upload",
