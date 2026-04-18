@@ -14,22 +14,26 @@ import logging
 import os
 from typing import Any
 
-import streamlit as st
 from dotenv import load_dotenv
+
+load_dotenv()
+os.environ.setdefault("USER_AGENT", "polychat/0.1.1")
+
+import streamlit as st
 from langchain_community.chat_message_histories import StreamlitChatMessageHistory
 from langchain_core.vectorstores import VectorStore
 
-from .i18n import DEFAULT_LOCALE, available_locales, set_locale, t
-from .rag.chain import DEFAULT_HISTORY_KEY, build_rag_chain
-from .rag.embeddings import (
+from polychat.i18n import DEFAULT_LOCALE, available_locales, set_locale, t
+from polychat.rag.chain import DEFAULT_HISTORY_KEY, build_rag_chain
+from polychat.rag.embeddings import (
     EmbeddingsProvider,
     MissingAPIKeyError,
     fingerprint,
     get_embeddings,
 )
-from .rag.llm import LLMProvider, available_models, get_llm
-from .rag.loaders import SourceKind, load_source
-from .rag.loaders.youtube import (
+from polychat.rag.llm import LLMProvider, available_models, get_llm
+from polychat.rag.loaders import SourceKind, load_source
+from polychat.rag.loaders.youtube import (
     AgeRestrictedError,
     InvalidYouTubeURLError,
     RequestBlockedError,
@@ -37,16 +41,14 @@ from .rag.loaders.youtube import (
     VideoUnavailableError,
     YouTubeLoaderError,
 )
-from .rag.splitter import split_documents
-from .rag.vector_store import (
+from polychat.rag.splitter import split_documents
+from polychat.rag.vector_store import (
     EmbeddingsMismatchError,
     VectorStoreBackend,
     VectorStoreFactory,
 )
 
 logger = logging.getLogger(__name__)
-
-load_dotenv()
 
 SESSION_ID = "default"
 SOURCE_KINDS: list[SourceKind] = ["pdf", "csv", "txt", "site", "youtube"]
@@ -105,7 +107,6 @@ def _render_files_tab() -> None:
     kind: SourceKind = st.selectbox(
         t("sidebar.source_type"),
         options=SOURCE_KINDS,
-        index=SOURCE_KINDS.index(st.session_state["source_kind"]),
         format_func=lambda v: t(f"sidebar.source.{v}"),
         key="source_kind",
     )
@@ -130,7 +131,6 @@ def _render_files_tab() -> None:
     st.selectbox(
         t("sidebar.vector_store"),
         options=VECTOR_BACKENDS,
-        index=VECTOR_BACKENDS.index(st.session_state["vector_backend"]),
         key="vector_backend",
     )
     st.checkbox(t("sidebar.persist"), key="persist_index")
@@ -159,7 +159,6 @@ def _render_models_tab() -> None:
     provider: LLMProvider = st.selectbox(
         t("sidebar.llm_provider"),
         options=LLM_PROVIDERS,
-        index=LLM_PROVIDERS.index(st.session_state["llm_provider"]),
         format_func=lambda v: v.capitalize(),
         key="llm_provider",
     )
@@ -171,7 +170,6 @@ def _render_models_tab() -> None:
     st.selectbox(
         t("sidebar.embeddings"),
         options=EMBEDDINGS_PROVIDERS,
-        index=EMBEDDINGS_PROVIDERS.index(st.session_state["embeddings_provider"]),
         format_func=lambda v: t(f"sidebar.embeddings.{v}"),
         key="embeddings_provider",
     )
