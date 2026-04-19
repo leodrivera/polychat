@@ -1,6 +1,6 @@
 [project]
 name = "polychat"
-version = "0.1.0"
+version = "0.1.1"
 description = "RAG chatbot over PDFs, CSV, TXT, websites, and YouTube videos with pluggable LLMs."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -67,7 +67,7 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["ANN", "PLR2004", "S101"]
-"src/polychat/app.py" = ["PLR0915"]  # Streamlit entry points tend to be long
+"src/polychat/app.py" = ["PLR0915", "E402"]  # long entrypoint; env setup must precede imports
 
 # ---------- Pyright ----------
 [tool.pyright]
