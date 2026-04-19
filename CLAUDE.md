@@ -60,6 +60,13 @@ Streamlit UI (app.py)
 
 **Adding a new language:** drop a `xx.json` next to `i18n/en.json` with a `_meta.name` field — no code changes.
 
+## Branching model
+
+- **`dev`** — default branch; all development work goes here.
+- **`main`** — stable branch; only receives PRs from `dev`.
+
+Never commit directly to `main`. To release: bump the version in `pyproject.toml` on `dev`, then open a PR → `main`. Merging that PR triggers `.github/workflows/release.yml`, which creates the Git tag and GitHub release automatically.
+
 ## Testing conventions
 
 - Unit tests live in `tests/unit/` and must not touch the network.
