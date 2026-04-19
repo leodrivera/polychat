@@ -43,10 +43,30 @@ jobs:
           git tag "${{ steps.version.outputs.tag }}"
           git push origin "${{ steps.version.outputs.tag }}"
 
+      - name: Generate changelog from commits
+        if: steps.tag_check.outputs.exists == 'false'
+        id: changelog
+        run: |
+          previous_tag=$(git tag --sort=-version:refname | grep -v "^${{ steps.version.outputs.tag }}$" | head -1)
+          if [ -n "$previous_tag" ]; then
+            notes=$(git log "${previous_tag}..HEAD" --pretty=format:"- %s" --no-merges)
+            range="**Full Changelog**: https://github.com/${{ github.repository }}/compare/${previous_tag}...${{ steps.version.outputs.tag }}"
+          else
+            notes=$(git log --pretty=format:"- %s" --no-merges)
+            range=""
+          fi
+          {
+            echo "notes<<EOF"
+            echo "## What's Changed"
+            echo "$notes"
+            [ -n "$range" ] && echo "" && echo "$range"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Create GitHub Release
         if: steps.tag_check.outputs.exists == 'false'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: "${{ steps.version.outputs.tag }}"
           name: "${{ steps.version.outputs.tag }}"
-          generate_release_notes: true
+          body: "${{ steps.changelog.outputs.notes }}"
