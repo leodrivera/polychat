@@ -21,9 +21,10 @@ Chat with **PDFs, CSVs, TXT files, websites, and YouTube videos** — powered by
 9. [Language switching](#language-switching)
 10. [Troubleshooting](#troubleshooting)
 11. [Development](#development)
-12. [Project structure](#project-structure)
-13. [Roadmap / out of scope](#roadmap--out-of-scope)
-14. [License](#license)
+12. [Contributing](#contributing)
+13. [Project structure](#project-structure)
+14. [Roadmap / out of scope](#roadmap--out-of-scope)
+15. [License](#license)
 
 ---
 
@@ -257,6 +258,20 @@ uv run streamlit run src/polychat/app.py
 ```
 
 Every commit runs **ruff → pyright → unit tests → hygiene checks**. CI runs the same gate on every push and pull request.
+
+---
+
+## Contributing
+
+1. **Fork** the repo and clone your fork.
+2. **Branch from `dev`**.
+   ```bash
+   git checkout dev
+   git checkout -b feat/my-feature
+   ```
+3. **Set up the dev environment** (see [Development](#development) above).
+4. Make your changes, keeping all pre-commit checks green.
+5. **Open a PR targeting `dev`**.
 
 ---
 
