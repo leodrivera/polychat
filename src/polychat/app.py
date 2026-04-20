@@ -16,8 +16,10 @@ from typing import Any, Final
 
 from dotenv import load_dotenv
 
+from polychat import __version__
+
 load_dotenv()
-os.environ.setdefault("USER_AGENT", "polychat/0.1.1")
+os.environ.setdefault("USER_AGENT", f"polychat/{__version__}")
 
 import streamlit as st
 from langchain_community.chat_message_histories import StreamlitChatMessageHistory
