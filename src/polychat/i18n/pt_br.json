@@ -31,6 +31,11 @@
   "sidebar.embeddings.huggingface_local": "HuggingFace (local, multilíngue)",
   "sidebar.temperature": "Temperatura",
 
+  "sidebar.ollama.advanced": "Avançado (Ollama)",
+  "sidebar.ollama.num_ctx": "Janela de contexto (num_ctx)",
+  "sidebar.ollama.num_predict": "Máximo de tokens gerados (num_predict)",
+  "sidebar.ollama.keep_alive": "Manter modelo ativo",
+
   "chat.placeholder": "Envie uma mensagem para o PolyChat",
   "chat.not_ready": "Carregue uma fonte e clique em 'Inicializar RAG' para começar.",
   "chat.thinking": "Pensando…",
@@ -48,5 +53,6 @@
   "errors.embeddings_changed": "Embeddings alterados — reinicialize o RAG.",
   "errors.no_source": "Forneça ao menos um arquivo ou URL antes de inicializar.",
   "errors.invalid_url": "Isso não parece uma URL {kind} válida.",
-  "errors.ollama_unreachable": "Não foi possível acessar o Ollama em {url}. Execute `ollama serve`."
+  "errors.ollama_unreachable": "Não foi possível acessar o Ollama em {url}. Execute `ollama serve`.",
+  "errors.ollama_model_not_found": "Modelo '{model}' não encontrado no Ollama. Execute: ollama pull {model}"
 }

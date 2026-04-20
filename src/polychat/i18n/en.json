@@ -31,6 +31,11 @@
   "sidebar.embeddings.huggingface_local": "HuggingFace (local, multilingual)",
   "sidebar.temperature": "Temperature",
 
+  "sidebar.ollama.advanced": "Advanced (Ollama)",
+  "sidebar.ollama.num_ctx": "Context window (num_ctx)",
+  "sidebar.ollama.num_predict": "Max new tokens (num_predict)",
+  "sidebar.ollama.keep_alive": "Keep model alive",
+
   "chat.placeholder": "Send a message to PolyChat",
   "chat.not_ready": "Load a source and click 'Initialize RAG' to begin.",
   "chat.thinking": "Thinking…",
@@ -48,5 +53,6 @@
   "errors.embeddings_changed": "Embeddings changed — please re-initialize the RAG.",
   "errors.no_source": "Please provide at least one file or a URL before initializing.",
   "errors.invalid_url": "That does not look like a valid {kind} URL.",
-  "errors.ollama_unreachable": "Cannot reach Ollama at {url}. Run `ollama serve`."
+  "errors.ollama_unreachable": "Cannot reach Ollama at {url}. Run `ollama serve`.",
+  "errors.ollama_model_not_found": "Model '{model}' not found in Ollama. Pull it first: ollama pull {model}"
 }

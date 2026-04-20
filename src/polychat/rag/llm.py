@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from typing import Literal
+from typing import Any, Literal
 
 from langchain_core.language_models import BaseChatModel
 
@@ -33,6 +33,9 @@ def get_llm(
     *,
     model: str,
     temperature: float = 0.3,
+    ollama_num_ctx: int | None = None,
+    ollama_num_predict: int | None = None,
+    ollama_keep_alive: str | None = None,
 ) -> BaseChatModel:
     """Build the LangChain ``BaseChatModel`` for ``provider``.
 
@@ -63,7 +66,14 @@ def get_llm(
         from langchain_ollama import ChatOllama
 
         base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-        return ChatOllama(model=model, temperature=temperature, base_url=base_url)
+        extra: dict[str, Any] = {}
+        if ollama_num_ctx is not None:
+            extra["num_ctx"] = ollama_num_ctx
+        if ollama_num_predict is not None:
+            extra["num_predict"] = ollama_num_predict
+        if ollama_keep_alive is not None:
+            extra["keep_alive"] = ollama_keep_alive
+        return ChatOllama(model=model, temperature=temperature, base_url=base_url, **extra)
 
     raise ValueError(f"Unknown LLM provider: {provider!r}")
 

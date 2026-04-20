@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Any
+from typing import Any, Final
 
 from dotenv import load_dotenv
 
@@ -22,6 +22,7 @@ os.environ.setdefault("USER_AGENT", "polychat/0.1.1")
 import streamlit as st
 from langchain_community.chat_message_histories import StreamlitChatMessageHistory
 from langchain_core.vectorstores import VectorStore
+from ollama import ResponseError as OllamaResponseError
 
 from polychat.i18n import DEFAULT_LOCALE, available_locales, set_locale, t
 from polychat.rag.chain import DEFAULT_HISTORY_KEY, build_rag_chain
@@ -51,6 +52,7 @@ from polychat.rag.vector_store import (
 logger = logging.getLogger(__name__)
 
 SESSION_ID = "default"
+_HTTP_NOT_FOUND: Final = 404
 SOURCE_KINDS: list[SourceKind] = ["pdf", "csv", "txt", "site", "youtube"]
 FILE_KINDS = {"pdf", "csv", "txt"}
 FILE_EXT: dict[str, list[str]] = {"pdf": ["pdf"], "csv": ["csv"], "txt": ["txt", "md"]}
@@ -87,6 +89,9 @@ def _bootstrap_state() -> None:
     st.session_state.setdefault("vector_backend", "chroma")
     st.session_state.setdefault("persist_index", False)
     st.session_state.setdefault("temperature", 0.3)
+    st.session_state.setdefault("ollama_num_ctx", 4096)
+    st.session_state.setdefault("ollama_num_predict", 512)
+    st.session_state.setdefault("ollama_keep_alive", "5m")
     # Instantiate the history lazily; it's owned by session_state internally.
     StreamlitChatMessageHistory(key=DEFAULT_HISTORY_KEY)
 
@@ -167,6 +172,30 @@ def _render_models_tab() -> None:
     model_index = models.index(current_model) if current_model in models else 0
     st.selectbox(t("sidebar.model"), options=models, index=model_index, key="llm_model")
 
+    if provider == "ollama":
+        model_name = str(st.session_state.get("llm_model", ""))
+        st.code(f"ollama pull {model_name}", language=None)
+        with st.expander(t("sidebar.ollama.advanced")):
+            st.number_input(
+                t("sidebar.ollama.num_ctx"),
+                min_value=512,
+                max_value=32768,
+                step=512,
+                key="ollama_num_ctx",
+            )
+            st.number_input(
+                t("sidebar.ollama.num_predict"),
+                min_value=64,
+                max_value=8192,
+                step=64,
+                key="ollama_num_predict",
+            )
+            st.selectbox(
+                t("sidebar.ollama.keep_alive"),
+                options=["0", "1m", "5m", "30m", "-1"],
+                key="ollama_keep_alive",
+            )
+
     st.selectbox(
         t("sidebar.embeddings"),
         options=EMBEDDINGS_PROVIDERS,
@@ -220,6 +249,14 @@ def _render_main() -> None:
         except MissingAPIKeyError as exc:
             st.error(t("errors.missing_api_key", provider=str(exc)))
             return
+        except OllamaResponseError as exc:
+            if exc.status_code == _HTTP_NOT_FOUND:
+                model = str(st.session_state.get("llm_model", "?"))
+                st.error(t("errors.ollama_model_not_found", model=model))
+            else:
+                url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+                st.error(t("errors.ollama_unreachable", url=url))
+            return
         answer = str(result.get("answer", ""))
         st.markdown(answer)
 
@@ -254,10 +291,18 @@ def _on_init_rag(*, kind: SourceKind, uploaded: list[Any], url: str) -> None:
                 embeddings,
                 embeddings_fingerprint=fingerprint(embeddings_provider),
             )
+            is_ollama = st.session_state["llm_provider"] == "ollama"
             llm = get_llm(
                 st.session_state["llm_provider"],
                 model=st.session_state["llm_model"],
                 temperature=float(st.session_state["temperature"]),
+                ollama_num_ctx=int(st.session_state["ollama_num_ctx"]) if is_ollama else None,
+                ollama_num_predict=(
+                    int(st.session_state["ollama_num_predict"]) if is_ollama else None
+                ),
+                ollama_keep_alive=(
+                    str(st.session_state["ollama_keep_alive"]) if is_ollama else None
+                ),
             )
             st.session_state["rag_chain"] = build_rag_chain(vector_store, llm)
             st.session_state["retriever_ready"] = True
