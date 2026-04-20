@@ -8,8 +8,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # Install all dependencies (including dev group)
 uv sync --group dev
 
-# Run the app
+# Run the app (dev)
 uv run streamlit run src/polychat/app.py
+
+# Run the app via the installed CLI entrypoint
+polychat                        # equivalent to the above
+polychat --server.port=8080     # extra args forwarded to Streamlit
 
 # Full gate (same as CI and pre-commit)
 uv run pre-commit run --all-files
@@ -60,12 +64,31 @@ Streamlit UI (app.py)
 
 **Adding a new language:** drop a `xx.json` next to `i18n/en.json` with a `_meta.name` field — no code changes.
 
+## Docker
+
+Two compose configurations are provided:
+
+```bash
+# Cloud providers (OpenAI / Anthropic / Groq)
+cp .env.example .env          # fill in API keys
+docker compose up             # build + run; open http://localhost:8501
+
+# Fully-offline stack with Ollama
+docker compose -f docker-compose.ollama.yml up
+docker compose -f docker-compose.ollama.yml exec ollama ollama pull llama3.1:8b
+# In the sidebar: Provider = Ollama · Model = llama3.1:8b · Embeddings = HuggingFace (local)
+```
+
+The image uses a multi-stage build (`uv` builder → `python:3.12-slim` runtime). Persisted indexes and HF model cache are stored under `/data` — mount a volume there in production.
+
+The Docker image is published to GHCR automatically by `.github/workflows/docker-publish.yml` when a version tag is pushed (same trigger as the GitHub release).
+
 ## Branching model
 
 - **`dev`** — default branch; all development work goes here.
 - **`main`** — stable branch; only receives PRs from `dev`.
 
-Never commit directly to `main`. To release: bump the version in `pyproject.toml` on `dev`, then open a PR → `main`. Merging that PR triggers `.github/workflows/release.yml`, which creates the Git tag and GitHub release automatically.
+Never commit directly to `main`. To release: bump the version in `pyproject.toml` on `dev`, then open a PR → `main`. Merging that PR triggers `.github/workflows/release.yml`, which creates the Git tag and GitHub release automatically. Pushing the tag also triggers `.github/workflows/docker-publish.yml`, which builds and pushes the multi-platform image to GHCR.
 
 ## Testing conventions
 

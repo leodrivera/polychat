@@ -13,18 +13,19 @@ Chat with **PDFs, CSVs, TXT files, websites, and YouTube videos** — powered by
 1. [Features](#features)
 2. [Architecture](#architecture)
 3. [Requirements](#requirements)
-4. [Installation](#installation)
-5. [Configuration](#configuration)
-6. [Usage scenarios](#usage-scenarios)
-7. [Source-type walkthroughs](#source-type-walkthroughs)
-8. [Persistence](#persistence)
-9. [Language switching](#language-switching)
-10. [Troubleshooting](#troubleshooting)
-11. [Development](#development)
-12. [Contributing](#contributing)
-13. [Project structure](#project-structure)
-14. [Roadmap / out of scope](#roadmap--out-of-scope)
-15. [License](#license)
+4. [Run with Docker](#run-with-docker)
+5. [Installation (from source)](#installation-from-source)
+6. [Configuration](#configuration)
+7. [Usage scenarios](#usage-scenarios)
+8. [Source-type walkthroughs](#source-type-walkthroughs)
+9. [Persistence](#persistence)
+10. [Language switching](#language-switching)
+11. [Troubleshooting](#troubleshooting)
+12. [Development](#development)
+13. [Contributing](#contributing)
+14. [Project structure](#project-structure)
+15. [Roadmap / out of scope](#roadmap--out-of-scope)
+16. [License](#license)
 
 ---
 
@@ -75,16 +76,66 @@ All RAG modules are pure, testable functions — the Streamlit app wires them to
 
 ---
 
-## Installation
+## Run with Docker
+
+The fastest way to try PolyChat is with Docker — no Python, no `uv`, no dependency juggling. Indexes and the HuggingFace model cache persist in a named volume.
+
+**Pull the prebuilt image (recommended):**
 
 ```bash
-git clone <repo-url> polychat
+curl -O https://raw.githubusercontent.com/leodrivera/polychat/main/.env.example
+mv .env.example .env           # then edit to add the provider keys you want
+
+docker run --rm -p 8501:8501 \
+  --env-file .env \
+  -v polychat-data:/data \
+  ghcr.io/leodrivera/polychat:latest
+```
+
+**Docker Compose — cloud providers (OpenAI / Anthropic / Groq):**
+
+```bash
+git clone -b main https://github.com/leodrivera/polychat.git
+cd polychat
+cp .env.example .env           # fill in at least one API key
+
+docker compose up              # add -d to run detached
+```
+
+**Docker Compose — fully offline with Ollama (no API keys needed):**
+
+```bash
+git clone -b main https://github.com/leodrivera/polychat.git
+cd polychat
+cp .env.example .env           # HF_TOKEN recommended; no API keys required
+
+docker compose -f docker-compose.ollama.yml up -d
+
+# Pull a model (one-time):
+docker compose -f docker-compose.ollama.yml exec ollama ollama pull llama3.1:8b
+
+# In the sidebar: Provider = Ollama · Model = llama3.1:8b · Embeddings = HuggingFace (local)
+```
+
+Open http://localhost:8501.
+
+- Images are published on every release tag to `ghcr.io/leodrivera/polychat` (tags: `latest`, `<major>`, `<major>.<minor>`, `<major>.<minor>.<patch>`). Multi-arch (`linux/amd64`, `linux/arm64`).
+- State lives in the `polychat-data` volume. Wipe with `docker compose down -v`.
+
+---
+
+## Installation (from source)
+
+```bash
+git clone -b main https://github.com/leodrivera/polychat.git
 cd polychat
 
 uv sync                       # or: python -m venv .venv && source .venv/bin/activate && pip install -e .
 cp .env.example .env          # fill in the keys you want to use
 
 uv run streamlit run src/polychat/app.py
+# or, equivalently, once the package is installed:
+polychat
 ```
 
 Open http://localhost:8501 and you're in.
@@ -100,11 +151,11 @@ OPENAI_API_KEY=
 ANTHROPIC_API_KEY=
 GROQ_API_KEY=
 
-# Ollama needs no key; override only if it runs elsewhere.
 OLLAMA_BASE_URL=http://localhost:11434
 
-# Optional proxy for youtube-transcript-api (IP-blocked networks / cloud VMs).
-YT_PROXY_HTTP=
+HF_TOKEN=               # optional — removes HuggingFace rate-limit warning
+
+YT_PROXY_HTTP=          # optional — only needed if YouTube blocks your IP
 YT_PROXY_HTTPS=
 ```
 
@@ -281,6 +332,7 @@ Every commit runs **ruff → pyright → unit tests → hygiene checks**. CI run
 polychat/
 ├── src/polychat/
 │   ├── app.py                    # Streamlit entrypoint — UI wiring only
+│   ├── cli.py                    # `polychat` console entrypoint
 │   ├── i18n/                     # t(), available_locales(), locale JSON files
 │   ├── rag/
 │   │   ├── loaders/              # PDF/CSV/TXT/site/YouTube loaders
@@ -294,8 +346,13 @@ polychat/
 │   ├── conftest.py               # DeterministicEmbeddings, YouTube fakes, tiny_locale_dir
 │   ├── unit/                     # fast, no-network suite (runs on every commit)
 │   └── integration/              # opt-in; requires API keys / network
+├── Dockerfile
+├── docker-compose.yml            # cloud providers (OpenAI / Anthropic / Groq)
+├── docker-compose.ollama.yml     # fully-offline stack with Ollama
 ├── .pre-commit-config.yaml
 ├── .github/workflows/ci.yml
+├── .github/workflows/release.yml
+├── .github/workflows/docker-publish.yml
 ├── pyproject.toml                # deps + ruff + pyright + pytest config
 └── .env.example
 ```
