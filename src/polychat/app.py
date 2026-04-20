@@ -24,7 +24,6 @@ os.environ.setdefault("USER_AGENT", f"polychat/{__version__}")
 import streamlit as st
 from langchain_community.chat_message_histories import StreamlitChatMessageHistory
 from langchain_core.vectorstores import VectorStore
-from ollama import ResponseError as OllamaResponseError
 
 from polychat.i18n import DEFAULT_LOCALE, available_locales, set_locale, t
 from polychat.rag.chain import DEFAULT_HISTORY_KEY, build_rag_chain
@@ -251,7 +250,13 @@ def _render_main() -> None:
         except MissingAPIKeyError as exc:
             st.error(t("errors.missing_api_key", provider=str(exc)))
             return
-        except OllamaResponseError as exc:
+        except Exception as exc:
+            try:
+                from ollama import ResponseError as OllamaResponseError  # lazy import
+            except ImportError:
+                raise exc from None
+            if not isinstance(exc, OllamaResponseError):
+                raise
             if exc.status_code == _HTTP_NOT_FOUND:
                 model = str(st.session_state.get("llm_model", "?"))
                 st.error(t("errors.ollama_model_not_found", model=model))
