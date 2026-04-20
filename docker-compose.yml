@@ -2,13 +2,13 @@
 #
 # Usage:
 #   cp .env.example .env    # fill in the API keys you plan to use
-#   docker compose up       # build + run; open http://localhost:8501
+#   docker compose up       # pull + run; open http://localhost:8501
 #
 # For the fully-offline stack (Ollama), use docker-compose.ollama.yml instead.
 
 services:
   polychat:
-    build: .
+    image: ghcr.io/leodrivera/polychat:latest
     container_name: polychat
     ports:
       - "8501:8501"

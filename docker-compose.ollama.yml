@@ -10,7 +10,7 @@
 
 services:
   polychat:
-    build: .
+    image: ghcr.io/leodrivera/polychat:latest
     container_name: polychat
     ports:
       - "8501:8501"
