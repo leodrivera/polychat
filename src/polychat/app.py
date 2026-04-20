@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import logging
 import os
+from pathlib import Path
 from typing import Any, Final
 
 from dotenv import load_dotenv
@@ -63,9 +64,13 @@ VECTOR_BACKENDS: list[VectorStoreBackend] = ["chroma", "faiss", "qdrant"]
 
 
 def main() -> None:
+    from PIL import Image
+
+    _favicon = Path(__file__).parent / "assets" / "favicon.png"
+    _icon: Any = Image.open(_favicon) if _favicon.exists() else ":robot_face:"
     st.set_page_config(
         page_title="PolyChat",
-        page_icon=":robot_face:",
+        page_icon=_icon,
         layout="wide",
     )
 
