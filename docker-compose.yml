@@ -1,0 +1,21 @@
+# PolyChat — cloud providers (OpenAI / Anthropic / Groq).
+#
+# Usage:
+#   cp .env.example .env    # fill in the API keys you plan to use
+#   docker compose up       # build + run; open http://localhost:8501
+#
+# For the fully-offline stack (Ollama), use docker-compose.ollama.yml instead.
+
+services:
+  polychat:
+    build: .
+    container_name: polychat
+    ports:
+      - "8501:8501"
+    env_file: .env
+    volumes:
+      - polychat-data:/data
+    restart: unless-stopped
+
+volumes:
+  polychat-data:

@@ -1,0 +1,38 @@
+# PolyChat — fully-offline stack with Ollama.
+#
+# Usage:
+#   cp .env.example .env                          # HF_TOKEN recommended; API keys not needed
+#   docker compose -f docker-compose.ollama.yml up
+#   docker compose -f docker-compose.ollama.yml exec ollama ollama pull llama3.1:8b
+#   open http://localhost:8501
+#
+# In the sidebar: Provider = Ollama · Model = llama3.1:8b · Embeddings = HuggingFace (local).
+
+services:
+  polychat:
+    build: .
+    container_name: polychat
+    ports:
+      - "8501:8501"
+    env_file: .env
+    environment:
+      OLLAMA_BASE_URL: http://ollama:11434
+    volumes:
+      - polychat-data:/data
+    depends_on:
+      ollama:
+        condition: service_started
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: polychat-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama:/root/.ollama
+    restart: unless-stopped
+
+volumes:
+  polychat-data:
+  ollama:

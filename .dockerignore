@@ -1,0 +1,50 @@
+# VCS
+.git
+.gitignore
+.github
+
+# Local envs & secrets
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+
+# Python build artefacts
+.venv
+venv
+env
+__pycache__
+*.py[cod]
+*.egg-info
+dist
+build
+
+# Tooling caches
+.ruff_cache
+.pytest_cache
+.pyright
+.mypy_cache
+.coverage
+htmlcov
+
+# Local RAG state (don't ship into the image — use the /data volume)
+chroma_db
+faiss_index
+qdrant_data
+.hf_cache
+
+# Tests & dev-only files
+tests
+.pre-commit-config.yaml
+
+# IDE / OS noise
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+
+# Docker itself
+Dockerfile
+.dockerignore
+docker-compose.yml
+compose.yml
