@@ -70,3 +70,9 @@ jobs:
           tag_name: "${{ steps.version.outputs.tag }}"
           name: "${{ steps.version.outputs.tag }}"
           body: "${{ steps.changelog.outputs.notes }}"
+
+      - name: Trigger Docker publish
+        if: steps.tag_check.outputs.exists == 'false'
+        run: gh workflow run docker-publish.yml --ref "${{ steps.version.outputs.tag }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
