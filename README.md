@@ -1,10 +1,12 @@
-# PolyChat
+<div align="center">
+  <img src="assets/logo.png" width="480" alt="PolyChat logo">
+  <h1>PolyChat</h1>
+  <p>Chat with <strong>PDFs, CSVs, TXT files, websites, and YouTube videos</strong> — powered by RAG, pluggable LLMs, and an optional fully-offline mode.</p>
 
-Chat with **PDFs, CSVs, TXT files, websites, and YouTube videos** — powered by RAG, pluggable LLMs, and an optional fully-offline mode.
-
-[![Python](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/)
-[![LangChain](https://img.shields.io/badge/LangChain-0.3%2B-green)](https://www.langchain.com/)
-[![License: MIT](https://img.shields.io/badge/license-MIT-lightgrey)](#license)
+  [![Python](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/)
+  [![LangChain](https://img.shields.io/badge/LangChain-0.3%2B-green)](https://www.langchain.com/)
+  [![License: MIT](https://img.shields.io/badge/license-MIT-lightgrey)](#license)
+</div>
 
 ---
 

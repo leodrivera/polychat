@@ -1,5 +1,5 @@
 {
-  "_meta": { "name": "Português (Brasil)", "code": "pt_br" },
+  "_meta": { "name": "Português (Brasil)", "code": "pt_br", "flag": "🇧🇷" },
 
   "app.title": "PolyChat — Converse com seus Documentos",
   "app.subtitle": "Converse com PDFs, CSVs, TXTs, sites e vídeos do YouTube.",

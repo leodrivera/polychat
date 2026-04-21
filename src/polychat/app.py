@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import logging
 import os
+from pathlib import Path
 from typing import Any, Final
 
 from dotenv import load_dotenv
@@ -24,7 +25,6 @@ os.environ.setdefault("USER_AGENT", f"polychat/{__version__}")
 import streamlit as st
 from langchain_community.chat_message_histories import StreamlitChatMessageHistory
 from langchain_core.vectorstores import VectorStore
-from ollama import ResponseError as OllamaResponseError
 
 from polychat.i18n import DEFAULT_LOCALE, available_locales, set_locale, t
 from polychat.rag.chain import DEFAULT_HISTORY_KEY, build_rag_chain
@@ -64,13 +64,19 @@ VECTOR_BACKENDS: list[VectorStoreBackend] = ["chroma", "faiss", "qdrant"]
 
 
 def main() -> None:
+    from PIL import Image
+
+    _favicon = Path(__file__).parent / "assets" / "favicon.png"
+    _icon: Any = Image.open(_favicon) if _favicon.exists() else ":robot_face:"
     st.set_page_config(
         page_title="PolyChat",
-        page_icon=":robot_face:",
+        page_icon=_icon,
         layout="wide",
     )
-
+    _inject_header_css()
     _bootstrap_state()
+    with st.container(key="language_selector_container"):
+        _render_language_selector()
     _render_sidebar()
     _render_main()
 
@@ -99,6 +105,27 @@ def _bootstrap_state() -> None:
 
 
 # ----------------------------------------------------------------- sidebar
+
+
+def _inject_header_css() -> None:
+    locales = available_locales()
+    max_chars = max((len(name) for name in locales.values()), default=10)
+    min_width = f"{max_chars + 4}ch"
+    st.markdown(
+        f"""
+        <style>
+        .st-key-language_selector_container {{
+            position: fixed;
+            top: 0.5rem;
+            right: 3.5rem;
+            z-index: 999999;
+            min-width: {min_width};
+            width: fit-content;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def _render_sidebar() -> None:
@@ -149,7 +176,7 @@ def _render_files_tab() -> None:
         _on_clear_history()
 
 
-def _render_models_tab() -> None:
+def _render_language_selector() -> None:
     locales = available_locales()
     codes = list(locales.keys())
     current = st.session_state.get("locale", DEFAULT_LOCALE)
@@ -158,11 +185,14 @@ def _render_models_tab() -> None:
         options=codes,
         index=codes.index(current) if current in codes else 0,
         format_func=lambda c: locales[c],
+        label_visibility="collapsed",
     )
     if new_locale != current:
         set_locale(new_locale)
         st.rerun()
 
+
+def _render_models_tab() -> None:
     provider: LLMProvider = st.selectbox(
         t("sidebar.llm_provider"),
         options=LLM_PROVIDERS,
@@ -251,7 +281,13 @@ def _render_main() -> None:
         except MissingAPIKeyError as exc:
             st.error(t("errors.missing_api_key", provider=str(exc)))
             return
-        except OllamaResponseError as exc:
+        except Exception as exc:
+            try:
+                from ollama import ResponseError as OllamaResponseError  # lazy import
+            except ImportError:
+                raise exc from None
+            if not isinstance(exc, OllamaResponseError):
+                raise
             if exc.status_code == _HTTP_NOT_FOUND:
                 model = str(st.session_state.get("llm_model", "?"))
                 st.error(t("errors.ollama_model_not_found", model=model))
