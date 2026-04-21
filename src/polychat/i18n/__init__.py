@@ -58,6 +58,15 @@ def available_locales() -> dict[str, str]:
     return out
 
 
+def locale_flag(code: str) -> str:
+    """Return the flag emoji for a locale code, or an empty string if not defined."""
+    try:
+        data = _load_locale(code)
+        return str(data.get("_meta", {}).get("flag", ""))
+    except (FileNotFoundError, json.JSONDecodeError):
+        return ""
+
+
 def get_active_locale() -> str:
     """Return the active locale code, using Streamlit session_state if possible."""
     try:
@@ -131,6 +140,7 @@ __all__ = [
     "available_locales",
     "clear_cache",
     "get_active_locale",
+    "locale_flag",
     "set_locale",
     "t",
 ]

@@ -73,8 +73,10 @@ def main() -> None:
         page_icon=_icon,
         layout="wide",
     )
-
+    _inject_header_css()
     _bootstrap_state()
+    with st.container(key="language_selector_container"):
+        _render_language_selector()
     _render_sidebar()
     _render_main()
 
@@ -103,6 +105,27 @@ def _bootstrap_state() -> None:
 
 
 # ----------------------------------------------------------------- sidebar
+
+
+def _inject_header_css() -> None:
+    locales = available_locales()
+    max_chars = max((len(name) for name in locales.values()), default=10)
+    min_width = f"{max_chars + 4}ch"
+    st.markdown(
+        f"""
+        <style>
+        .st-key-language_selector_container {{
+            position: fixed;
+            top: 0.5rem;
+            right: 3.5rem;
+            z-index: 999999;
+            min-width: {min_width};
+            width: fit-content;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def _render_sidebar() -> None:
@@ -153,7 +176,7 @@ def _render_files_tab() -> None:
         _on_clear_history()
 
 
-def _render_models_tab() -> None:
+def _render_language_selector() -> None:
     locales = available_locales()
     codes = list(locales.keys())
     current = st.session_state.get("locale", DEFAULT_LOCALE)
@@ -162,11 +185,14 @@ def _render_models_tab() -> None:
         options=codes,
         index=codes.index(current) if current in codes else 0,
         format_func=lambda c: locales[c],
+        label_visibility="collapsed",
     )
     if new_locale != current:
         set_locale(new_locale)
         st.rerun()
 
+
+def _render_models_tab() -> None:
     provider: LLMProvider = st.selectbox(
         t("sidebar.llm_provider"),
         options=LLM_PROVIDERS,

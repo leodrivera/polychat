@@ -1,5 +1,5 @@
 {
-  "_meta": { "name": "English", "code": "en" },
+  "_meta": { "name": "English", "code": "en", "flag": "🇺🇸" },
 
   "app.title": "PolyChat — Chat with Your Documents",
   "app.subtitle": "Chat with PDFs, CSVs, TXTs, websites, and YouTube videos.",
