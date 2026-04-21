@@ -86,9 +86,18 @@ The Docker image is published to GHCR automatically by `.github/workflows/docker
 ## Branching model
 
 - **`dev`** — default branch; all development work goes here.
-- **`main`** — stable branch; only receives PRs from `dev`.
+- **`main`** — stable branch; only receives merges from `dev`.
 
-Never commit directly to `main`. To release: bump the version in `pyproject.toml` on `dev`, then open a PR → `main`. Merging that PR triggers `.github/workflows/release.yml`, which creates the Git tag and GitHub release automatically. Pushing the tag also triggers `.github/workflows/docker-publish.yml`, which builds and pushes the multi-platform image to GHCR.
+Never commit directly to `main`. To release: bump the version in `pyproject.toml` on `dev`, commit and push to `dev`, then merge `dev` into `main` directly:
+
+```bash
+git checkout main
+git merge dev --ff-only
+git push origin main
+git checkout dev
+```
+
+Pushing to `main` triggers `.github/workflows/release.yml`, which creates the Git tag, GitHub release, and builds and pushes the multi-platform Docker image to GHCR — all in one workflow.
 
 ## Testing conventions
 
