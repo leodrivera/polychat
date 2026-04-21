@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - pyproject.toml
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -78,7 +79,7 @@ jobs:
   build-and-push:
     name: Build & push to GHCR
     needs: tag-and-release
-    if: needs.tag-and-release.outputs.created == 'true'
+    if: needs.tag-and-release.outputs.created == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
