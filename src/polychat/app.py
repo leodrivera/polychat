@@ -303,47 +303,60 @@ def _render_main() -> None:
 
 
 def _on_init_rag(*, kind: SourceKind, uploaded: list[Any], url: str) -> None:
-    if kind in FILE_KINDS and not uploaded:
-        st.error(t("errors.no_source"))
-        return
-    if kind in {"site", "youtube"} and not url.strip():
+    has_source = (kind in FILE_KINDS and bool(uploaded)) or (
+        kind in {"site", "youtube"} and bool(url.strip())
+    )
+    persist: bool = bool(st.session_state["persist_index"])
+
+    if not has_source and not persist:
         st.error(t("errors.no_source"))
         return
 
     try:
-        with st.spinner(t("status.ingesting", kind=t(f"sidebar.source.{kind}"))):
-            inputs: list[Any] | str = uploaded if kind in FILE_KINDS else url
-            proxy = _proxy_from_env()
-            docs = load_source(kind, inputs, locale=st.session_state["locale"], proxy=proxy)
-            chunks = split_documents(docs)
-            embeddings_provider: EmbeddingsProvider = st.session_state["embeddings_provider"]
-            embeddings = get_embeddings(embeddings_provider)
-            backend: VectorStoreBackend = st.session_state["vector_backend"]
-            factory = VectorStoreFactory(
-                backend=backend,
-                persist=bool(st.session_state["persist_index"]),
-                persist_dir=_persist_dir_for(backend),
-            )
+        embeddings_provider: EmbeddingsProvider = st.session_state["embeddings_provider"]
+        backend: VectorStoreBackend = st.session_state["vector_backend"]
+        factory = VectorStoreFactory(
+            backend=backend,
+            persist=persist,
+            persist_dir=_persist_dir_for(backend),
+        )
+
+        if has_source:
+            with st.spinner(t("status.ingesting", kind=t(f"sidebar.source.{kind}"))):
+                inputs: list[Any] | str = uploaded if kind in FILE_KINDS else url
+                proxy = _proxy_from_env()
+                docs = load_source(kind, inputs, locale=st.session_state["locale"], proxy=proxy)
+                chunks = split_documents(docs)
+                embeddings = get_embeddings(embeddings_provider)
             vector_store: VectorStore = factory.build(
                 chunks,
                 embeddings,
                 embeddings_fingerprint=fingerprint(embeddings_provider),
             )
-            is_ollama = st.session_state["llm_provider"] == "ollama"
-            llm = get_llm(
-                st.session_state["llm_provider"],
-                model=st.session_state["llm_model"],
-                temperature=float(st.session_state["temperature"]),
-                ollama_num_ctx=int(st.session_state["ollama_num_ctx"]) if is_ollama else None,
-                ollama_num_predict=(
-                    int(st.session_state["ollama_num_predict"]) if is_ollama else None
-                ),
-                ollama_keep_alive=(
-                    str(st.session_state["ollama_keep_alive"]) if is_ollama else None
-                ),
+            loaded_from_persist = False
+        else:
+            embeddings = get_embeddings(embeddings_provider)
+            _vs = factory.load(
+                embeddings,
+                embeddings_fingerprint=fingerprint(embeddings_provider),
             )
-            st.session_state["rag_chain"] = build_rag_chain(vector_store, llm)
-            st.session_state["retriever_ready"] = True
+            if _vs is None:
+                st.error(t("errors.no_source"))
+                return
+            vector_store = _vs
+            loaded_from_persist = True
+
+        is_ollama = st.session_state["llm_provider"] == "ollama"
+        llm = get_llm(
+            st.session_state["llm_provider"],
+            model=st.session_state["llm_model"],
+            temperature=float(st.session_state["temperature"]),
+            ollama_num_ctx=int(st.session_state["ollama_num_ctx"]) if is_ollama else None,
+            ollama_num_predict=(int(st.session_state["ollama_num_predict"]) if is_ollama else None),
+            ollama_keep_alive=(str(st.session_state["ollama_keep_alive"]) if is_ollama else None),
+        )
+        st.session_state["rag_chain"] = build_rag_chain(vector_store, llm)
+        st.session_state["retriever_ready"] = True
     except MissingAPIKeyError as exc:
         st.error(t("errors.missing_api_key", provider=str(exc)))
     except InvalidYouTubeURLError:
@@ -364,7 +377,7 @@ def _on_init_rag(*, kind: SourceKind, uploaded: list[Any], url: str) -> None:
         logger.exception("RAG initialization failed")
         st.error(str(exc))
     else:
-        st.success(t("status.ready"))
+        st.success(t("status.loaded_persisted" if loaded_from_persist else "status.ready"))
 
 
 def _on_clear_history() -> None:
