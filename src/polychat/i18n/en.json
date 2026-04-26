@@ -18,7 +18,6 @@
   "sidebar.upload.site": "Website URL",
   "sidebar.upload.youtube": "YouTube URL",
 
-  "sidebar.vector_store": "Vector store",
   "sidebar.persist": "Persist index (keeps RAG after restart)",
   "sidebar.button.init": "Initialize RAG",
   "sidebar.button.clear": "Clear Conversation History",
@@ -36,6 +35,19 @@
   "sidebar.ollama.num_predict": "Max new tokens (num_predict)",
   "sidebar.ollama.keep_alive": "Keep model alive",
 
+  "banner.persist_found": "A persisted index was found in {path}.",
+  "banner.button.load": "Load it",
+  "banner.button.fresh": "Start fresh",
+  "banner.confirm_reset": "This will permanently delete the persisted index. Are you sure?",
+  "banner.button.confirm_reset": "Yes, delete it",
+
+  "dialog.replace_append.body": "A persisted index already exists. How should the new documents be incorporated?",
+  "dialog.button.replace": "Replace",
+  "dialog.button.append": "Append",
+  "dialog.button.cancel": "Cancel",
+  "dialog.mismatch.body": "The persisted index was built with embedder '{stored}', but the current embedder is '{current}'. Reset and rebuild to continue, or change the embedder back to the original.",
+  "dialog.button.reset_rebuild": "Reset and rebuild",
+
   "chat.placeholder": "Send a message to PolyChat",
   "chat.not_ready": "Load a source and click 'Initialize RAG' to begin.",
   "chat.thinking": "Thinking…",
@@ -44,15 +56,16 @@
   "status.ready": "RAG is ready. Ask a question below.",
   "status.cleared": "Conversation history cleared.",
   "status.loaded_persisted": "Loaded a previously persisted index.",
+  "status.appended": "New documents added to the existing index.",
 
   "errors.no_transcript": "This video does not have a transcript available.",
   "errors.video_unavailable": "This video is unavailable (private, deleted, or restricted).",
   "errors.ip_blocked": "YouTube blocked this request. Try setting YT_PROXY_HTTP/HTTPS in .env.",
   "errors.age_restricted": "This video is age-restricted and cannot be fetched without authentication.",
   "errors.missing_api_key": "Missing API key for {provider}. Set it in .env.",
-  "errors.embeddings_changed": "Embeddings changed — please re-initialize the RAG.",
   "errors.no_source": "Please provide at least one file or a URL before initializing.",
   "errors.invalid_url": "That does not look like a valid {kind} URL.",
   "errors.ollama_unreachable": "Cannot reach Ollama at {url}. Run `ollama serve`.",
-  "errors.ollama_model_not_found": "Model '{model}' not found in Ollama. Pull it first: ollama pull {model}"
+  "errors.ollama_model_not_found": "Model '{model}' not found in Ollama. Pull it first: ollama pull {model}",
+  "errors.reset_rebuild_no_source": "Index cleared. Upload a source and click Initialize RAG to rebuild."
 }
