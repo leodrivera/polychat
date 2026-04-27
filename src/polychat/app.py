@@ -263,11 +263,12 @@ def _render_models_tab() -> None:
 def _render_persist_banner() -> bool:
     """Render the boot banner when a persisted index is detected.
 
+    Gated on disk presence, not on the persist_index checkbox — the checkbox
+    controls future writes; loading an existing index is a separate action.
+
     Returns True if a banner was rendered (caller can skip the generic
     'not ready' message in that case).
     """
-    if not bool(st.session_state.get("persist_index")):
-        return False
     if st.session_state.get("_persist_banner_dismissed"):
         return False
     if not has_persisted_index(_PERSIST_DIR):
