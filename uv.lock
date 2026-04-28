@@ -2677,7 +2677,7 @@ wheels = [
 
 [[package]]
 name = "polychat"
-version = "0.3.0"
+version = "0.4.0"
 source = { editable = "." }
 dependencies = [
     { name = "beautifulsoup4" },
