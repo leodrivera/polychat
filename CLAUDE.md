@@ -53,14 +53,15 @@ Streamlit UI (app.py)
 4. At query time: `build_rag_chain()` creates a `RunnableWithMessageHistory` that rewrites follow-up questions using `condense_question_prompt`, retrieves chunks, then passes context + history to the LLM via `qa_prompt`.
 
 **Key design decisions:**
-- All factories (`get_llm`, `get_embeddings`, `VectorStoreFactory`) use lazy imports — provider packages are only imported if that provider is selected. This avoids import errors for providers not installed.
-- `VectorStoreFactory` writes a `.fingerprint` sidecar alongside any persisted index to detect embedding-model mismatches across sessions.
+- All factories (`get_llm`, `get_embeddings`) use lazy imports — provider packages are only imported if that provider is selected. This avoids import errors for providers not installed.
+- `open_chroma_index` writes a `.fingerprint` sidecar alongside any persisted index to detect embedding-model mismatches across sessions.
+- The persisted Chroma handle is cached per-process via `@st.cache_resource` in `app.py`, keyed on `(persist_dir, fingerprint, provider)`. This ensures one open SQLite connection regardless of how many times "Initialize RAG" is clicked.
 - The i18n system (`i18n/__init__.py`) resolves the active locale from `streamlit.session_state` when Streamlit is running, or from a module-level variable otherwise — making all i18n helpers testable without a Streamlit runtime.
 - `MissingAPIKeyError` is the single error type for missing API keys; `app.py` catches it and surfaces a localized message.
 
 **Adding a new LLM provider:** add to `LLMProvider` Literal in `llm.py`, extend `DEFAULT_MODELS`, add the branch in `get_llm()`.
 
-**Adding a new vector store backend:** extend `VectorStoreBackend` Literal in `vector_store.py`, add `_build_X` / `_load_X` methods, wire into `build()` and `load()`.
+**Chroma is the only vector store backend.** Ephemeral mode (`persist_index=False`) keeps the index in memory; persistent mode writes to `./chroma_db/`. The public API lives in `rag/vector_store.py`: `open_chroma_index`, `has_persisted_index`, `read_fingerprint`, `reset_chroma_index`.
 
 **Adding a new language:** drop a `xx.json` next to `i18n/en.json` with a `_meta.name` field — no code changes.
 
