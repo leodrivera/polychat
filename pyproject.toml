@@ -1,6 +1,6 @@
 [project]
 name = "polychat"
-version = "0.2.1"
+version = "0.3.0"
 description = "RAG chatbot over PDFs, CSV, TXT, websites, and YouTube videos with pluggable LLMs."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -20,11 +20,8 @@ dependencies = [
   "langchain-ollama>=1.1",
   "langchain-chroma>=1.1",
   "langchain-huggingface>=1.2",
-  "langchain-qdrant>=1.1",
   "sentence-transformers>=5.0",
   "chromadb>=1.5",
-  "faiss-cpu>=1.11",
-  "qdrant-client>=1.15",
   "pypdf>=6.0",
   "beautifulsoup4>=4.13",
   "youtube-transcript-api>=1.2.4,<2",
@@ -67,7 +64,7 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["ANN", "PLR2004", "S101"]
-"src/polychat/app.py" = ["PLR0915", "E402"]  # long entrypoint; env setup must precede imports
+"src/polychat/app.py" = ["PLR0915", "PLR0912", "E402"]  # long entrypoint; env setup must precede imports
 
 # ---------- Pyright ----------
 [tool.pyright]

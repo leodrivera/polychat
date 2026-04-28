@@ -10,7 +10,7 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.language_models.fake_chat_models import FakeListChatModel
 
 from polychat.rag.chain import build_rag_chain
-from polychat.rag.vector_store import VectorStoreFactory
+from polychat.rag.vector_store import open_chroma_index
 
 
 def test_build_rag_chain_produces_an_answer(fake_embeddings: Embeddings) -> None:
@@ -18,8 +18,12 @@ def test_build_rag_chain_produces_an_answer(fake_embeddings: Embeddings) -> None
         Document(page_content="The capital of France is Paris.", metadata={"source": "geo.txt"}),
         Document(page_content="The Eiffel Tower is in Paris.", metadata={"source": "geo.txt"}),
     ]
-    factory = VectorStoreFactory(backend="faiss", persist=False)
-    store = factory.build(docs, fake_embeddings)
+    store = open_chroma_index(
+        embeddings=fake_embeddings,
+        embeddings_fingerprint="test:v1",
+        persist_dir=None,
+    )
+    store.add_documents(docs)
 
     llm = FakeListChatModel(responses=["paris", "paris"])
     history_store: dict[str, InMemoryChatMessageHistory] = {}

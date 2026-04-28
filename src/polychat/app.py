@@ -24,6 +24,7 @@ os.environ.setdefault("USER_AGENT", f"polychat/{__version__}")
 
 import streamlit as st
 from langchain_community.chat_message_histories import StreamlitChatMessageHistory
+from langchain_core.documents import Document
 from langchain_core.vectorstores import VectorStore
 
 from polychat.i18n import DEFAULT_LOCALE, available_locales, set_locale, t
@@ -47,20 +48,38 @@ from polychat.rag.loaders.youtube import (
 from polychat.rag.splitter import split_documents
 from polychat.rag.vector_store import (
     EmbeddingsMismatchError,
-    VectorStoreBackend,
-    VectorStoreFactory,
+    has_persisted_index,
+    open_chroma_index,
+    read_fingerprint,
+    reset_chroma_index,
 )
 
 logger = logging.getLogger(__name__)
 
 SESSION_ID = "default"
 _HTTP_NOT_FOUND: Final = 404
+_PERSIST_DIR: Final = Path("./chroma_db")
 SOURCE_KINDS: list[SourceKind] = ["pdf", "csv", "txt", "site", "youtube"]
 FILE_KINDS = {"pdf", "csv", "txt"}
 FILE_EXT: dict[str, list[str]] = {"pdf": ["pdf"], "csv": ["csv"], "txt": ["txt", "md"]}
 EMBEDDINGS_PROVIDERS: list[EmbeddingsProvider] = ["openai", "huggingface_local"]
 LLM_PROVIDERS: list[LLMProvider] = ["openai", "anthropic", "groq", "ollama"]
-VECTOR_BACKENDS: list[VectorStoreBackend] = ["chroma", "faiss", "qdrant"]
+
+
+@st.cache_resource
+def _open_cached_index(
+    persist_dir_str: str | None,
+    embeddings_fingerprint: str,
+    embeddings_provider: EmbeddingsProvider,
+) -> VectorStore:
+    """One open Chroma instance per (dir, fingerprint, provider) tuple per process."""
+    embeddings = get_embeddings(embeddings_provider)
+    persist_dir = Path(persist_dir_str) if persist_dir_str else None
+    return open_chroma_index(
+        embeddings=embeddings,
+        embeddings_fingerprint=embeddings_fingerprint,
+        persist_dir=persist_dir,
+    )
 
 
 def main() -> None:
@@ -94,13 +113,13 @@ def _bootstrap_state() -> None:
     st.session_state.setdefault("llm_provider", "openai")
     st.session_state.setdefault("llm_model", available_models("openai")[0])
     st.session_state.setdefault("embeddings_provider", "huggingface_local")
-    st.session_state.setdefault("vector_backend", "chroma")
     st.session_state.setdefault("persist_index", False)
     st.session_state.setdefault("temperature", 0.3)
     st.session_state.setdefault("ollama_num_ctx", 4096)
     st.session_state.setdefault("ollama_num_predict", 512)
     st.session_state.setdefault("ollama_keep_alive", "5m")
-    # Instantiate the history lazily; it's owned by session_state internally.
+    st.session_state.setdefault("_confirm_reset", False)
+    st.session_state.setdefault("_persist_banner_dismissed", False)
     StreamlitChatMessageHistory(key=DEFAULT_HISTORY_KEY)
 
 
@@ -162,11 +181,6 @@ def _render_files_tab() -> None:
     elif kind == "youtube":
         url = st.text_input(t("sidebar.upload.youtube"), key="url_youtube")
 
-    st.selectbox(
-        t("sidebar.vector_store"),
-        options=VECTOR_BACKENDS,
-        key="vector_backend",
-    )
     st.checkbox(t("sidebar.persist"), key="persist_index")
 
     col_init, col_clear = st.columns(2)
@@ -246,6 +260,55 @@ def _render_models_tab() -> None:
 # ------------------------------------------------------------- main / chat
 
 
+def _render_persist_banner() -> bool:
+    """Render the boot banner when a persisted index is detected.
+
+    Gated on disk presence, not on the persist_index checkbox — the checkbox
+    controls future writes; loading an existing index is a separate action.
+
+    Returns True if a banner was rendered (caller can skip the generic
+    'not ready' message in that case).
+    """
+    if st.session_state.get("_persist_banner_dismissed"):
+        return False
+    if not has_persisted_index(_PERSIST_DIR):
+        return False
+
+    stored_fp = read_fingerprint(_PERSIST_DIR)
+    current_fp = fingerprint(st.session_state["embeddings_provider"])
+
+    if stored_fp == current_fp:
+        col_msg, col_load, col_fresh = st.columns([4, 1, 1])
+        col_msg.info(t("banner.persist_found", path=str(_PERSIST_DIR)))
+        if col_load.button(t("banner.button.load"), type="primary"):
+            try:
+                _load_persisted()
+                st.rerun()
+            except MissingAPIKeyError as exc:
+                st.error(t("errors.missing_api_key", provider=str(exc)))
+        if col_fresh.button(t("banner.button.fresh")):
+            st.session_state["_confirm_reset"] = True
+            st.rerun()
+        if st.session_state.get("_confirm_reset"):
+            st.warning(t("banner.confirm_reset"))
+            if st.button(t("banner.button.confirm_reset")):
+                _reset_persisted()
+                st.rerun()
+        return True
+
+    # Fingerprint mismatch — stored embedder ≠ current
+    st.warning(t("dialog.mismatch.body", stored=stored_fp or "unknown", current=current_fp))
+    col1, col2 = st.columns(2)
+    if col1.button(t("dialog.button.reset_rebuild"), type="primary"):
+        _reset_persisted()
+        st.info(t("errors.reset_rebuild_no_source"))
+        st.rerun()
+    if col2.button(t("dialog.button.cancel")):
+        st.session_state["_persist_banner_dismissed"] = True
+        st.rerun()
+    return True
+
+
 def _render_main() -> None:
     st.title(t("app.title"))
     st.caption(t("app.subtitle"))
@@ -257,7 +320,8 @@ def _render_main() -> None:
             st.markdown(str(message.content))
 
     if not st.session_state.get("retriever_ready"):
-        st.info(t("chat.not_ready"))
+        if not _render_persist_banner():
+            st.info(t("chat.not_ready"))
         return
 
     user_input = st.chat_input(t("chat.placeholder"))
@@ -302,50 +366,126 @@ def _render_main() -> None:
 # ------------------------------------------------------------- callbacks
 
 
+def _build_llm_from_state() -> Any:
+    provider: LLMProvider = st.session_state["llm_provider"]
+    is_ollama = provider == "ollama"
+    return get_llm(
+        provider,
+        model=st.session_state["llm_model"],
+        temperature=float(st.session_state["temperature"]),
+        ollama_num_ctx=int(st.session_state["ollama_num_ctx"]) if is_ollama else None,
+        ollama_num_predict=(int(st.session_state["ollama_num_predict"]) if is_ollama else None),
+        ollama_keep_alive=(str(st.session_state["ollama_keep_alive"]) if is_ollama else None),
+    )
+
+
+def _load_persisted() -> None:
+    provider: EmbeddingsProvider = st.session_state["embeddings_provider"]
+    fp = fingerprint(provider)
+    index = _open_cached_index(str(_PERSIST_DIR), fp, provider)
+    st.session_state["rag_chain"] = build_rag_chain(index, _build_llm_from_state())
+    st.session_state["retriever_ready"] = True
+
+
+def _build_fresh(
+    chunks: list[Document],
+    embeddings_provider: EmbeddingsProvider,
+    fp: str,
+    persist_dir: Path | None,
+) -> None:
+    _open_cached_index.clear()
+    dir_str = str(persist_dir) if persist_dir else None
+    index = _open_cached_index(dir_str, fp, embeddings_provider)
+    index.add_documents(chunks)
+    st.session_state["rag_chain"] = build_rag_chain(index, _build_llm_from_state())
+    st.session_state["retriever_ready"] = True
+
+
+def _append_to_persisted(
+    chunks: list[Document],
+    embeddings_provider: EmbeddingsProvider,
+    fp: str,
+) -> None:
+    index = _open_cached_index(str(_PERSIST_DIR), fp, embeddings_provider)
+    index.add_documents(chunks)
+    st.session_state["rag_chain"] = build_rag_chain(index, _build_llm_from_state())
+    st.session_state["retriever_ready"] = True
+
+
+def _reset_persisted() -> None:
+    _open_cached_index.clear()
+    reset_chroma_index(_PERSIST_DIR)
+    st.session_state["retriever_ready"] = False
+    st.session_state["rag_chain"] = None
+    st.session_state["_confirm_reset"] = False
+    st.session_state["_persist_banner_dismissed"] = False
+
+
+@st.dialog("Existing index")
+def _replace_append_dialog(
+    chunks: list[Document],
+    embeddings_provider: EmbeddingsProvider,
+    fp: str,
+) -> None:
+    st.write(t("dialog.replace_append.body"))
+    col1, col2, col3 = st.columns(3)
+    if col1.button(t("dialog.button.replace")):
+        _reset_persisted()
+        _build_fresh(chunks, embeddings_provider, fp, _PERSIST_DIR)
+        st.toast(t("status.ready"))
+        st.rerun()
+    if col2.button(t("dialog.button.append"), type="primary"):
+        _append_to_persisted(chunks, embeddings_provider, fp)
+        st.toast(t("status.appended"))
+        st.rerun()
+    if col3.button(t("dialog.button.cancel")):
+        st.rerun()
+
+
 def _on_init_rag(*, kind: SourceKind, uploaded: list[Any], url: str) -> None:
-    if kind in FILE_KINDS and not uploaded:
-        st.error(t("errors.no_source"))
-        return
-    if kind in {"site", "youtube"} and not url.strip():
+    has_source = (kind in FILE_KINDS and bool(uploaded)) or (
+        kind in {"site", "youtube"} and bool(url.strip())
+    )
+    persist: bool = bool(st.session_state["persist_index"])
+    persisted = persist and has_persisted_index(_PERSIST_DIR)
+
+    if not has_source and not persisted:
         st.error(t("errors.no_source"))
         return
 
+    embeddings_provider: EmbeddingsProvider = st.session_state["embeddings_provider"]
+    fp = fingerprint(embeddings_provider)
+
     try:
+        if not has_source:
+            _load_persisted()
+            st.success(t("status.loaded_persisted"))
+            return
+
         with st.spinner(t("status.ingesting", kind=t(f"sidebar.source.{kind}"))):
             inputs: list[Any] | str = uploaded if kind in FILE_KINDS else url
-            proxy = _proxy_from_env()
-            docs = load_source(kind, inputs, locale=st.session_state["locale"], proxy=proxy)
+            docs = load_source(
+                kind, inputs, locale=st.session_state["locale"], proxy=_proxy_from_env()
+            )
             chunks = split_documents(docs)
-            embeddings_provider: EmbeddingsProvider = st.session_state["embeddings_provider"]
-            embeddings = get_embeddings(embeddings_provider)
-            backend: VectorStoreBackend = st.session_state["vector_backend"]
-            factory = VectorStoreFactory(
-                backend=backend,
-                persist=bool(st.session_state["persist_index"]),
-                persist_dir=_persist_dir_for(backend),
-            )
-            vector_store: VectorStore = factory.build(
-                chunks,
-                embeddings,
-                embeddings_fingerprint=fingerprint(embeddings_provider),
-            )
-            is_ollama = st.session_state["llm_provider"] == "ollama"
-            llm = get_llm(
-                st.session_state["llm_provider"],
-                model=st.session_state["llm_model"],
-                temperature=float(st.session_state["temperature"]),
-                ollama_num_ctx=int(st.session_state["ollama_num_ctx"]) if is_ollama else None,
-                ollama_num_predict=(
-                    int(st.session_state["ollama_num_predict"]) if is_ollama else None
-                ),
-                ollama_keep_alive=(
-                    str(st.session_state["ollama_keep_alive"]) if is_ollama else None
-                ),
-            )
-            st.session_state["rag_chain"] = build_rag_chain(vector_store, llm)
-            st.session_state["retriever_ready"] = True
+
+        if persisted:
+            _replace_append_dialog(chunks=chunks, embeddings_provider=embeddings_provider, fp=fp)
+            return
+
+        _build_fresh(
+            chunks=chunks,
+            embeddings_provider=embeddings_provider,
+            fp=fp,
+            persist_dir=_PERSIST_DIR if persist else None,
+        )
+        st.success(t("status.ready"))
+
     except MissingAPIKeyError as exc:
         st.error(t("errors.missing_api_key", provider=str(exc)))
+    except EmbeddingsMismatchError:
+        stored = read_fingerprint(_PERSIST_DIR)
+        st.warning(t("dialog.mismatch.body", stored=stored or "unknown", current=fp))
     except InvalidYouTubeURLError:
         st.error(t("errors.invalid_url", kind="YouTube"))
     except TranscriptUnavailableError:
@@ -358,13 +498,9 @@ def _on_init_rag(*, kind: SourceKind, uploaded: list[Any], url: str) -> None:
         st.error(t("errors.age_restricted"))
     except YouTubeLoaderError as exc:
         st.error(str(exc))
-    except EmbeddingsMismatchError:
-        st.warning(t("errors.embeddings_changed"))
     except Exception as exc:  # last-resort UI guard
         logger.exception("RAG initialization failed")
         st.error(str(exc))
-    else:
-        st.success(t("status.ready"))
 
 
 def _on_clear_history() -> None:
@@ -379,10 +515,6 @@ def _proxy_from_env() -> dict[str, str] | None:
     if not http and not https:
         return None
     return {"http": http, "https": https}
-
-
-def _persist_dir_for(backend: VectorStoreBackend) -> str:
-    return {"chroma": "./chroma_db", "faiss": "./faiss_index", "qdrant": "./qdrant_data"}[backend]
 
 
 if __name__ == "__main__":

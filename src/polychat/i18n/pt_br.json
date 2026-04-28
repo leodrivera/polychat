@@ -18,7 +18,6 @@
   "sidebar.upload.site": "URL do site",
   "sidebar.upload.youtube": "URL do vídeo",
 
-  "sidebar.vector_store": "Base vetorial",
   "sidebar.persist": "Persistir índice (mantém o RAG após reiniciar)",
   "sidebar.button.init": "Inicializar RAG",
   "sidebar.button.clear": "Apagar Histórico de Conversa",
@@ -36,6 +35,19 @@
   "sidebar.ollama.num_predict": "Máximo de tokens gerados (num_predict)",
   "sidebar.ollama.keep_alive": "Manter modelo ativo",
 
+  "banner.persist_found": "Um índice persistido foi encontrado em {path}.",
+  "banner.button.load": "Carregar",
+  "banner.button.fresh": "Recomeçar",
+  "banner.confirm_reset": "Isso apagará permanentemente o índice persistido. Tem certeza?",
+  "banner.button.confirm_reset": "Sim, apagar",
+
+  "dialog.replace_append.body": "Já existe um índice persistido. Como os novos documentos devem ser incorporados?",
+  "dialog.button.replace": "Substituir",
+  "dialog.button.append": "Adicionar",
+  "dialog.button.cancel": "Cancelar",
+  "dialog.mismatch.body": "O índice persistido foi criado com o embedder '{stored}', mas o embedder atual é '{current}'. Redefina e reconstrua para continuar, ou mude o embedder de volta ao original.",
+  "dialog.button.reset_rebuild": "Redefinir e reconstruir",
+
   "chat.placeholder": "Envie uma mensagem para o PolyChat",
   "chat.not_ready": "Carregue uma fonte e clique em 'Inicializar RAG' para começar.",
   "chat.thinking": "Pensando…",
@@ -44,15 +56,16 @@
   "status.ready": "RAG pronto. Faça sua pergunta abaixo.",
   "status.cleared": "Histórico de conversa apagado.",
   "status.loaded_persisted": "Índice persistido anterior carregado.",
+  "status.appended": "Novos documentos adicionados ao índice existente.",
 
   "errors.no_transcript": "Este vídeo não possui transcrição disponível.",
   "errors.video_unavailable": "Este vídeo está indisponível (privado, removido ou restrito).",
   "errors.ip_blocked": "O YouTube bloqueou a requisição. Configure YT_PROXY_HTTP/HTTPS no .env.",
   "errors.age_restricted": "Este vídeo tem restrição de idade e não pode ser acessado sem autenticação.",
   "errors.missing_api_key": "Chave de API ausente para {provider}. Defina no .env.",
-  "errors.embeddings_changed": "Embeddings alterados — reinicialize o RAG.",
   "errors.no_source": "Forneça ao menos um arquivo ou URL antes de inicializar.",
   "errors.invalid_url": "Isso não parece uma URL {kind} válida.",
   "errors.ollama_unreachable": "Não foi possível acessar o Ollama em {url}. Execute `ollama serve`.",
-  "errors.ollama_model_not_found": "Modelo '{model}' não encontrado no Ollama. Execute: ollama pull {model}"
+  "errors.ollama_model_not_found": "Modelo '{model}' não encontrado no Ollama. Execute: ollama pull {model}",
+  "errors.reset_rebuild_no_source": "Índice apagado. Faça upload de uma fonte e clique em Inicializar RAG para reconstruir."
 }
