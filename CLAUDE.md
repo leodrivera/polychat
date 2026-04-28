@@ -2,6 +2,11 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Superpowers Preferences
+
+- Save all superpowers plans to `.superpowers/plans/` (not `docs/superpowers/plans/`)
+- Save all superpowers specs to `.superpowers/specs/` (not `docs/superpowers/specs/`)
+
 ## Commands
 
 ```bash
