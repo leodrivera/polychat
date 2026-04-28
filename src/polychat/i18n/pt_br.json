@@ -1,7 +1,7 @@
 {
   "_meta": { "name": "Português (Brasil)", "code": "pt_br", "flag": "🇧🇷" },
 
-  "app.title": "PolyChat — Converse com seus Documentos",
+  "app.title": "Converse com seus Documentos",
   "app.subtitle": "Converse com PDFs, CSVs, TXTs, sites e vídeos do YouTube.",
 
   "sidebar.tab.files": "Upload de Arquivos",
@@ -19,8 +19,8 @@
   "sidebar.upload.youtube": "URL do vídeo",
 
   "sidebar.persist": "Persistir índice (mantém o RAG após reiniciar)",
-  "sidebar.button.init": "Inicializar RAG",
-  "sidebar.button.clear": "Apagar Histórico de Conversa",
+  "sidebar.button.init": "🚀 Inicializar RAG",
+  "sidebar.button.clear": "🗑️ Apagar Histórico",
 
   "sidebar.language": "Idioma",
   "sidebar.llm_provider": "Provedor LLM",
@@ -36,15 +36,15 @@
   "sidebar.ollama.keep_alive": "Manter modelo ativo",
 
   "banner.persist_found": "Um índice persistido foi encontrado em {path}.",
-  "banner.button.load": "Carregar",
-  "banner.button.fresh": "Recomeçar",
+  "banner.button.load": "📂 Carregar",
+  "banner.button.fresh": "✨ Recomeçar",
   "banner.confirm_reset": "Isso apagará permanentemente o índice persistido. Tem certeza?",
-  "banner.button.confirm_reset": "Sim, apagar",
+  "banner.button.confirm_reset": "⚠️ Sim, apagar",
 
   "dialog.replace_append.body": "Já existe um índice persistido. Como os novos documentos devem ser incorporados?",
-  "dialog.button.replace": "Substituir",
-  "dialog.button.append": "Adicionar",
-  "dialog.button.cancel": "Cancelar",
+  "dialog.button.replace": "🔄 Substituir",
+  "dialog.button.append": "➕ Adicionar",
+  "dialog.button.cancel": "✖️ Cancelar",
   "dialog.mismatch.body": "O índice persistido foi criado com o embedder '{stored}', mas o embedder atual é '{current}'. Redefina e reconstrua para continuar, ou mude o embedder de volta ao original.",
   "dialog.button.reset_rebuild": "Redefinir e reconstruir",
 
