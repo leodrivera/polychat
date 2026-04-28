@@ -1,7 +1,7 @@
 {
   "_meta": { "name": "English", "code": "en", "flag": "🇺🇸" },
 
-  "app.title": "PolyChat — Chat with Your Documents",
+  "app.title": "Chat with Your Documents",
   "app.subtitle": "Chat with PDFs, CSVs, TXTs, websites, and YouTube videos.",
 
   "sidebar.tab.files": "File Upload",
@@ -19,8 +19,8 @@
   "sidebar.upload.youtube": "YouTube URL",
 
   "sidebar.persist": "Persist index (keeps RAG after restart)",
-  "sidebar.button.init": "Initialize RAG",
-  "sidebar.button.clear": "Clear Conversation History",
+  "sidebar.button.init": "🚀 Initialize RAG",
+  "sidebar.button.clear": "🗑️ Clear History",
 
   "sidebar.language": "Language",
   "sidebar.llm_provider": "LLM Provider",
@@ -36,15 +36,15 @@
   "sidebar.ollama.keep_alive": "Keep model alive",
 
   "banner.persist_found": "A persisted index was found in {path}.",
-  "banner.button.load": "Load it",
-  "banner.button.fresh": "Start fresh",
+  "banner.button.load": "📂 Load it",
+  "banner.button.fresh": "✨ Start fresh",
   "banner.confirm_reset": "This will permanently delete the persisted index. Are you sure?",
-  "banner.button.confirm_reset": "Yes, delete it",
+  "banner.button.confirm_reset": "⚠️ Yes, delete it",
 
   "dialog.replace_append.body": "A persisted index already exists. How should the new documents be incorporated?",
-  "dialog.button.replace": "Replace",
-  "dialog.button.append": "Append",
-  "dialog.button.cancel": "Cancel",
+  "dialog.button.replace": "🔄 Replace",
+  "dialog.button.append": "➕ Append",
+  "dialog.button.cancel": "✖️ Cancel",
   "dialog.mismatch.body": "The persisted index was built with embedder '{stored}', but the current embedder is '{current}'. Reset and rebuild to continue, or change the embedder back to the original.",
   "dialog.button.reset_rebuild": "Reset and rebuild",
 
