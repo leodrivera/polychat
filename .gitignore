@@ -27,6 +27,8 @@ htmlcov/
 
 # Local RAG state
 chroma_db/
+polychat_prefs.json
+.superpowers/
 qdrant_data/
 faiss_index/
 

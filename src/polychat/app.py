@@ -45,6 +45,7 @@ from polychat.rag.loaders.youtube import (
     VideoUnavailableError,
     YouTubeLoaderError,
 )
+from polychat.rag.prefs import load_prefs, save_prefs
 from polychat.rag.splitter import split_documents
 from polychat.rag.vector_store import (
     EmbeddingsMismatchError,
@@ -110,11 +111,14 @@ def _bootstrap_state() -> None:
     st.session_state.setdefault("rag_chain", None)
     st.session_state.setdefault("retriever_ready", False)
     st.session_state.setdefault("source_kind", "pdf")
-    st.session_state.setdefault("llm_provider", "openai")
-    st.session_state.setdefault("llm_model", available_models("openai")[0])
-    st.session_state.setdefault("embeddings_provider", "huggingface_local")
+    _prefs = load_prefs()
+    st.session_state.setdefault("llm_provider", _prefs.get("llm_provider", "openai"))
+    st.session_state.setdefault("llm_model", _prefs.get("llm_model", available_models("openai")[0]))
+    st.session_state.setdefault(
+        "embeddings_provider", _prefs.get("embeddings_provider", "huggingface_local")
+    )
     st.session_state.setdefault("persist_index", False)
-    st.session_state.setdefault("temperature", 0.3)
+    st.session_state.setdefault("temperature", _prefs.get("temperature", 0.3))
     st.session_state.setdefault("ollama_num_ctx", 4096)
     st.session_state.setdefault("ollama_num_predict", 512)
     st.session_state.setdefault("ollama_keep_alive", "5m")
@@ -140,6 +144,20 @@ def _inject_header_css() -> None:
             z-index: 999999;
             min-width: {min_width};
             width: fit-content;
+        }}
+        .st-key-main_header {{
+            max-width: 900px;
+        }}
+        .st-key-main_header [data-testid="column"]:first-child {{
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }}
+        .st-key-persist_banner {{
+            max-width: 900px;
+        }}
+        .st-key-chat_not_ready {{
+            max-width: 900px;
         }}
         </style>
         """,
@@ -212,11 +230,18 @@ def _render_models_tab() -> None:
         options=LLM_PROVIDERS,
         format_func=lambda v: v.capitalize(),
         key="llm_provider",
+        on_change=_save_prefs_callback,
     )
     models = available_models(provider)
     current_model = st.session_state.get("llm_model", models[0])
     model_index = models.index(current_model) if current_model in models else 0
-    st.selectbox(t("sidebar.model"), options=models, index=model_index, key="llm_model")
+    st.selectbox(
+        t("sidebar.model"),
+        options=models,
+        index=model_index,
+        key="llm_model",
+        on_change=_save_prefs_callback,
+    )
 
     if provider == "ollama":
         model_name = str(st.session_state.get("llm_model", ""))
@@ -247,6 +272,7 @@ def _render_models_tab() -> None:
         options=EMBEDDINGS_PROVIDERS,
         format_func=lambda v: t(f"sidebar.embeddings.{v}"),
         key="embeddings_provider",
+        on_change=_save_prefs_callback,
     )
     st.slider(
         t("sidebar.temperature"),
@@ -254,6 +280,7 @@ def _render_models_tab() -> None:
         max_value=1.0,
         step=0.05,
         key="temperature",
+        on_change=_save_prefs_callback,
     )
 
 
@@ -277,41 +304,48 @@ def _render_persist_banner() -> bool:
     stored_fp = read_fingerprint(_PERSIST_DIR)
     current_fp = fingerprint(st.session_state["embeddings_provider"])
 
-    if stored_fp == current_fp:
-        col_msg, col_load, col_fresh = st.columns([4, 1, 1])
-        col_msg.info(t("banner.persist_found", path=str(_PERSIST_DIR)))
-        if col_load.button(t("banner.button.load"), type="primary"):
-            try:
-                _load_persisted()
+    with st.container(key="persist_banner"):
+        if stored_fp == current_fp:
+            st.info(t("banner.persist_found", path=str(_PERSIST_DIR)))
+            _, col_load, col_fresh, _ = st.columns([2, 1, 1, 2])
+            if col_load.button(t("banner.button.load"), type="primary", use_container_width=True):
+                try:
+                    _load_persisted()
+                    st.rerun()
+                except MissingAPIKeyError as exc:
+                    st.error(t("errors.missing_api_key", provider=str(exc)))
+            if col_fresh.button(t("banner.button.fresh"), use_container_width=True):
+                st.session_state["_confirm_reset"] = True
                 st.rerun()
-            except MissingAPIKeyError as exc:
-                st.error(t("errors.missing_api_key", provider=str(exc)))
-        if col_fresh.button(t("banner.button.fresh")):
-            st.session_state["_confirm_reset"] = True
-            st.rerun()
-        if st.session_state.get("_confirm_reset"):
-            st.warning(t("banner.confirm_reset"))
-            if st.button(t("banner.button.confirm_reset")):
-                _reset_persisted()
-                st.rerun()
-        return True
+            if st.session_state.get("_confirm_reset"):
+                st.warning(t("banner.confirm_reset"))
+                col_confirm, _ = st.columns([1, 5])
+                if col_confirm.button(t("banner.button.confirm_reset"), use_container_width=True):
+                    _reset_persisted()
+                    st.rerun()
+            return True
 
-    # Fingerprint mismatch — stored embedder ≠ current
-    st.warning(t("dialog.mismatch.body", stored=stored_fp or "unknown", current=current_fp))
-    col1, col2 = st.columns(2)
-    if col1.button(t("dialog.button.reset_rebuild"), type="primary"):
-        _reset_persisted()
-        st.info(t("errors.reset_rebuild_no_source"))
-        st.rerun()
-    if col2.button(t("dialog.button.cancel")):
-        st.session_state["_persist_banner_dismissed"] = True
-        st.rerun()
+        # Fingerprint mismatch — stored embedder ≠ current
+        st.warning(t("dialog.mismatch.body", stored=stored_fp or "unknown", current=current_fp))
+        _, col1, col2, _ = st.columns([2, 1, 1, 2])
+        if col1.button(t("dialog.button.reset_rebuild"), type="primary", use_container_width=True):
+            _reset_persisted()
+            st.info(t("errors.reset_rebuild_no_source"))
+            st.rerun()
+        if col2.button(t("dialog.button.cancel"), use_container_width=True):
+            st.session_state["_persist_banner_dismissed"] = True
+            st.rerun()
     return True
 
 
 def _render_main() -> None:
-    st.title(t("app.title"))
-    st.caption(t("app.subtitle"))
+    with st.container(key="main_header"):
+        col_logo, col_title = st.columns([1, 8])
+        with col_logo:
+            st.image(Path(__file__).parent / "assets" / "logo.png", width=72)
+        with col_title:
+            st.title(t("app.title"))
+        st.caption(t("app.subtitle"))
 
     history = StreamlitChatMessageHistory(key=DEFAULT_HISTORY_KEY)
     for message in history.messages:
@@ -321,7 +355,8 @@ def _render_main() -> None:
 
     if not st.session_state.get("retriever_ready"):
         if not _render_persist_banner():
-            st.info(t("chat.not_ready"))
+            with st.container(key="chat_not_ready"):
+                st.info(t("chat.not_ready"))
         return
 
     user_input = st.chat_input(t("chat.placeholder"))
@@ -507,6 +542,10 @@ def _on_clear_history() -> None:
     history = StreamlitChatMessageHistory(key=DEFAULT_HISTORY_KEY)
     history.clear()
     st.toast(t("status.cleared"))
+
+
+def _save_prefs_callback() -> None:
+    save_prefs({k: v for k, v in st.session_state.items() if isinstance(k, str)})
 
 
 def _proxy_from_env() -> dict[str, str] | None:
