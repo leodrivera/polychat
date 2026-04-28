@@ -58,6 +58,7 @@ Streamlit UI (app.py)
 - The persisted Chroma handle is cached per-process via `@st.cache_resource` in `app.py`, keyed on `(persist_dir, fingerprint, provider)`. This ensures one open SQLite connection regardless of how many times "Initialize RAG" is clicked.
 - The i18n system (`i18n/__init__.py`) resolves the active locale from `streamlit.session_state` when Streamlit is running, or from a module-level variable otherwise — making all i18n helpers testable without a Streamlit runtime.
 - `MissingAPIKeyError` is the single error type for missing API keys; `app.py` catches it and surfaces a localized message.
+- `rag/prefs.py` persists `llm_provider`, `llm_model`, `embeddings_provider`, and `temperature` to `./polychat_prefs.json` (zero Streamlit imports — pure stdlib). `_bootstrap_state()` loads prefs on startup; `_save_prefs_callback()` writes them on every widget change. In Docker the file resolves to `/data/polychat_prefs.json` inside the volume.
 
 **Adding a new LLM provider:** add to `LLMProvider` Literal in `llm.py`, extend `DEFAULT_MODELS`, add the branch in `get_llm()`.
 

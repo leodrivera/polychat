@@ -36,8 +36,9 @@
 - **5 source types:** PDF, CSV, TXT, website URL, YouTube URL.
 - **4 LLM providers:** OpenAI, Anthropic, Groq, Ollama — swappable from the UI.
 - **2 embedding providers:** OpenAI (cloud) and HuggingFace (fully local, multilingual).
-- **3 vector-store backends:** Chroma (default), FAISS, Qdrant — all behind one toggle.
+- **Chroma vector store** — ephemeral or persistent, single backend, zero config.
 - **Persistent or ephemeral index** at the user's choice.
+- **Model selection persistence** — provider, model, embeddings, and temperature are remembered across restarts.
 - **Conversational memory** with history-aware query rewriting, so follow-up questions work.
 - **Multi-language UI:** English + Portuguese ship out of the box. Adding a language is a single JSON file.
 - **100% free & offline mode** with Ollama + HuggingFace embeddings — no API keys, no network.
@@ -247,12 +248,11 @@ If your IP is blocked by YouTube (common on cloud VMs), set `YT_PROXY_HTTP` / `Y
 ## Persistence
 
 - Enable **Persist index** on the sidebar **before** clicking *Initialize RAG*.
-- This writes the vector store to disk:
-  - Chroma → `./chroma_db/`
-  - FAISS → `./faiss_index/`
-  - Qdrant → `./qdrant_data/`
+- This writes the vector store to `./chroma_db/` (or `/data/chroma_db/` in Docker).
 - Restarting Streamlit will reload the persisted index automatically.
-- To wipe, delete the directory.
+- To wipe, delete the `chroma_db/` directory.
+
+**Model selection** (provider, model, embeddings, temperature) is always persisted to `./polychat_prefs.json` — no checkbox needed. In Docker it resolves to `/data/polychat_prefs.json` inside the volume.
 
 A `.fingerprint` sidecar records which embedding model produced the index. Switching embedding providers raises `errors.embeddings_changed` until you re-initialize — you can't mix vectors from different embedders.
 
@@ -260,7 +260,7 @@ A `.fingerprint` sidecar records which embedding model produced the index. Switc
 
 ## Language switching
 
-- The selector lives in **Sidebar → Model Selection → Language**.
+- The selector lives in the **top-right corner** of the page (fixed position).
 - Shipped: `en` (default) and `pt_br` (matching the original screenshots).
 - **Adding a new language** (zero code):
 
@@ -340,7 +340,8 @@ polychat/
 │   │   ├── loaders/              # PDF/CSV/TXT/site/YouTube loaders
 │   │   ├── splitter.py
 │   │   ├── embeddings.py         # OpenAI + HuggingFace local
-│   │   ├── vector_store.py       # Chroma / FAISS / Qdrant factory
+│   │   ├── vector_store.py       # Chroma (only backend)
+│   │   ├── prefs.py              # model selection persistence (pure stdlib)
 │   │   ├── llm.py                # OpenAI / Anthropic / Groq / Ollama factory
 │   │   └── chain.py              # history-aware retrieval chain
 │   └── prompts/qa.py
